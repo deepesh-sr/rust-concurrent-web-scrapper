@@ -30,7 +30,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn fetch_page(url: &String)-> Result<String, Box<dyn  std::error::Error + Send + Sync>> { 
-    let resp = reqwest::get(url).await?.text().await?;
+    let client = reqwest::Client::new();
+    let resp = client.get(url).header("User-Agent","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36").send().await?.text().await?;
     Ok(resp)
 }
 
