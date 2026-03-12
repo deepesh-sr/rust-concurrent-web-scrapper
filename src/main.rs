@@ -4,16 +4,32 @@ use scraper::{Html, Selector};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("Hello, world!");
-    let url = String::from("https://solana.com");
-    let html = fetch_page(&url).await?;
-    let parsed_links = parse_links(&html);
-    println!("{parsed_links:?}");
 
+    //vector of urls
+    let urls = vec!["https://solana.com","https://amazon.com","https://myntra.com"];
+
+    let mut handles = vec![];
+    for url in urls {
+        let handle = tokio::spawn(scrape(url.to_string()));
+        handles.push(handle);
+    }
+
+    for handle in handles { 
+        // this is good for learning but not for production 
+        // let links = handle.await.unwrap().unwrap();
+        // println!("{:?}", links);
+
+        // error handling with pattern matching 
+        match  handle.await {
+            Ok(Ok(links))=>println!("{:?}",links),
+            Ok(Err(e))=> eprintln!("{:?}",e),
+            Err(e)=> eprintln!("{:?}",e)
+        }
+    }
     Ok(())
 }
 
-async fn fetch_page(url: &String)-> Result<String, Box<dyn  std::error::Error>> { 
+async fn fetch_page(url: &String)-> Result<String, Box<dyn  std::error::Error + Send + Sync>> { 
     let resp = reqwest::get(url).await?.text().await?;
     Ok(resp)
 }
@@ -30,4 +46,9 @@ fn parse_links(html : &str)-> Vec<String>{
     }
     links
 
+}
+
+async fn scrape(url : String) -> Result<Vec<String>,Box<dyn std::error::Error + Send + Sync >>{
+let html = fetch_page(&url).await?;
+  Ok(parse_links(&html))
 }
